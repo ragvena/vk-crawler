@@ -1,5 +1,6 @@
-package com.test.servlet.vk;
+package com.test.servlet;
 
+import com.test.network.VKNetworkManager;
 import org.apache.log4j.Logger;
 
 import javax.servlet.ServletException;

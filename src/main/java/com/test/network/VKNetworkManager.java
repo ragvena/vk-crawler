@@ -1,7 +1,5 @@
-package com.test.servlet.vk;
+package com.test.network;
 
-import com.test.servlet.SocialRate;
-import com.test.servlet.SocialWebManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -16,7 +14,7 @@ import java.util.Scanner;
 /**
  * nazarovtr
  */
-public class VKNetworkManager implements SocialWebManager<VKAPIProvider> {
+public class VKNetworkManager{
 
     private static final String VK_NAME = "vk_api";
     private static final String APP_ID = "3449144";
@@ -89,14 +87,14 @@ public class VKNetworkManager implements SocialWebManager<VKAPIProvider> {
         request.getSession().setAttribute(VK_NAME, null);
     }
 
-    public SocialRate getSocialRate(HttpServletRequest request, HttpServletResponse response) {
-        VKAPIProvider vk = getNetwork(request, response);
-        if (vk != null) {
-            return new SocialRate(vk.getFriendsIdList("11364269").toString(), 1, 1, 1);
-        } else {
-            return SocialRate.blank();
-        }
-    }
+//    public SocialRate getSocialRate(HttpServletRequest request, HttpServletResponse response) {
+//        VKAPIProvider vk = getNetwork(request, response);
+//        if (vk != null) {
+//            return new SocialRate(vk.getFriendsIdList("11364269").toString(), 1, 1, 1);
+//        } else {
+//            return SocialRate.blank();
+//        }
+//    }
 
 
     private static class SingletonHolder {

@@ -1,4 +1,4 @@
-package com.test.servlet.vk;
+package com.test.network;
 
 import com.mongodb.DBObject;
 import org.apache.http.HttpResponse;
@@ -85,23 +85,23 @@ public class VKAPIProvider {
         }
     }
 
-    public DBObject getFriendsIdList(String userId)  {
+    public JSONArray getFriendsIdList(String userId)  {
         Map<String, String> requestParameters = new HashMap<String, String>();
         requestParameters.put(SINGLE_UID_REQUEST_PARAMETER, userId);
         JSONArray friendIdList = null;
         try {
             friendIdList = callAPIMethod(METHOD_GET_FRIENDS, requestParameters).getJSONArray("response");
         } catch (JSONException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
-        return JSONToDBObjectConverter.encode(friendIdList);
+        return friendIdList;
     }
 
-    public DBObject getUsersDetailInfo(String usersIdList, String infoFields) throws JSONException {
+    public JSONArray getUsersDetailInfo(String usersIdList, String infoFields) throws JSONException {
         Map<String, String> requestParameters = new HashMap<String, String>();
         requestParameters.put(LIST_UID_REQUEST_PARAMETER, usersIdList);
         requestParameters.put(FIELDS_REQUEST_PARAMETER, infoFields);
         JSONArray usersDetailInfo = callAPIMethod(METHOD_GET_USER_INFO, requestParameters).getJSONArray("response");
-        return JSONToDBObjectConverter.encode(usersDetailInfo);
+        return usersDetailInfo;
     }
 }
