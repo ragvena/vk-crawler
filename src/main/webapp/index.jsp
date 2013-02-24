@@ -9,7 +9,7 @@
 
     VKNetworkManager manager = VKNetworkManager.getInstance();
     Runner crawler = Runner.getInstance(manager.getNetwork(request, response));
-    crawler.saveFriends("11364269",2);
+    crawler.saveFriends("11364269",3);
 //    SocialRate rate = manager.getSocialRate(request, response);
 %>
 <html>

@@ -1,8 +1,8 @@
 package com.test.crawler;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
+import com.mongodb.*;
 import com.test.network.VKAPIProvider;
+import com.test.user.MongoDbUserInterface;
 import com.test.utils.MongoDBStorage;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -32,21 +32,44 @@ public class Runner {
 
     public static void saveFriends(String rootUserId, final Integer depth) {
         if (vkapiProvider != null) {
-            Integer currentDepth = 1;
+            Integer currentDepth = 0;
+            Long requestCounter=0L;
             MongoDBStorage storage = MongoDBStorage.getInstance();
-            storage.userCollection.insert(new BasicDBObject("_id",rootUserId));
+            storage.userCollection.insert(BasicDBObjectBuilder.start()
+                    .add(MongoDbUserInterface.USER_ID, rootUserId)
+                    .add(MongoDbUserInterface.FRIEND_CIRCLE, 0)
+                    .add(MongoDbUserInterface.ROOT_USER, rootUserId)
+                    .get()
+            );
+           currentDepth=2;
+            while (currentDepth < depth) {
 
-            while (currentDepth > depth) {
-                JSONArray friends = vkapiProvider.getFriendsIdList(rootUserId);
-                for (int i = 0; i < friends.length() / 10; i++) {
-                    try {
-                        LOGGER.info(vkapiProvider.getUsersDetailInfo(friends.get(i).toString(), ""));
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
+                DBCursor currentCircle = storage.getFriendCircle(rootUserId,currentDepth);
                 currentDepth++;
-                LOGGER.info("yep");
+                LOGGER.info("Processed circle:\t"+currentDepth);
+                while(currentCircle.hasNext()){
+                    DBObject currentUser = currentCircle.next();
+                    JSONArray friends = vkapiProvider.getFriendsIdList((String) currentUser.get(MongoDbUserInterface.USER_ID));
+                    requestCounter++;
+                    for (int i = 0; i < friends.length(); i++) {
+                        try {
+                            storage.userCollection.insert(BasicDBObjectBuilder.start()
+                                    .add(MongoDbUserInterface.USER_ID, friends.get(i).toString())
+                                    .add(MongoDbUserInterface.FRIEND_CIRCLE, currentDepth)
+                                    .add(MongoDbUserInterface.ROOT_USER, rootUserId)
+                                    .get()
+                            );
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    LOGGER.info("RN:\t"+requestCounter);
+
+                }
+
+
+
+
             }
         } else {
             LOGGER.info("nop");

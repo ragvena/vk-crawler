@@ -5,6 +5,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,6 +26,7 @@ public class VKAPIProvider {
     public static final String SINGLE_UID_REQUEST_PARAMETER = "uid";
     public static final String LIST_UID_REQUEST_PARAMETER = "uids";
     public static final String FIELDS_REQUEST_PARAMETER = "fields";
+    private static Logger LOGGER = Logger.getLogger(VKAPIProvider.class);
 
 
     private String accessToken;
@@ -92,6 +94,7 @@ public class VKAPIProvider {
         try {
             friendIdList = callAPIMethod(METHOD_GET_FRIENDS, requestParameters).getJSONArray("response");
         } catch (JSONException e) {
+            LOGGER.info(callAPIMethod(METHOD_GET_FRIENDS, requestParameters));
             e.printStackTrace();
         }
         return friendIdList;
