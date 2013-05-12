@@ -1,18 +1,13 @@
 package com.test.network;
 
-import com.mongodb.DBObject;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import com.test.data.VKDataTags;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import com.test.utils.JSONToDBObjectConverter;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: ragvena
@@ -20,21 +15,18 @@ import java.util.*;
  * Time: 10:58 AM
  */
 public class VKAPIProvider {
-    public static final String API_URL = "https://api.vk.com/method/";
-    public static final String METHOD_GET_FRIENDS = "friends.get";
-    public static final String METHOD_GET_USER_INFO = "users.get";
-    public static final String SINGLE_UID_REQUEST_PARAMETER = "uid";
-    public static final String LIST_UID_REQUEST_PARAMETER = "uids";
-    public static final String FIELDS_REQUEST_PARAMETER = "fields";
+
+
+    public static final String FIELDS_REQUEST_PARAMETER_VALUE = "sex,bdate,city";
     private static Logger LOGGER = Logger.getLogger(VKAPIProvider.class);
-
-
     private String accessToken;
     private Long expiresIn;
     private Long userId;
+    private SimpleCallAPIMethodExecutor apiMethodExecutor;
 
     public VKAPIProvider(String accessToken, Long expiresIn, Long userId) {
         this.accessToken = accessToken;
+        this.apiMethodExecutor = new SimpleCallAPIMethodExecutor(accessToken);
         this.expiresIn = expiresIn;
         this.userId = userId;
     }
@@ -63,48 +55,32 @@ public class VKAPIProvider {
         this.userId = userId;
     }
 
-
-    private JSONObject callAPIMethod(String method, Map<String, String> params) {
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(API_URL).append(method)
-                .append("?access_token=").append(accessToken);
-
-        for (String key : params.keySet()) {
-            urlBuilder.append("&").append(key).append("=").append(params.get(key));
-        }
-        HttpGet get = new HttpGet(urlBuilder.toString());
-        HttpClient client = new DefaultHttpClient();
-        HttpResponse httpResponse;
-        try {
-            httpResponse = client.execute(get);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            return new JSONObject(new Scanner(httpResponse.getEntity().getContent()).useDelimiter("\\A").next());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public JSONArray getFriendsIdList(String userId) throws InterruptedException {
+        Map<String, String> requestParameters = new HashMap<String, String>();
+        requestParameters.put(VKDataTags.UID, userId);
+        return (JSONArray) apiMethodExecutor.execute(VKAPIMethod.FRIENDS_GET, requestParameters);
     }
 
-    public JSONArray getFriendsIdList(String userId)  {
+    public JSONArray getUsersDetailInfo(String usersId, String infoFields) throws JSONException, InterruptedException {
+        infoFields = FIELDS_REQUEST_PARAMETER_VALUE;
         Map<String, String> requestParameters = new HashMap<String, String>();
-        requestParameters.put(SINGLE_UID_REQUEST_PARAMETER, userId);
-        JSONArray friendIdList = null;
-        try {
-            friendIdList = callAPIMethod(METHOD_GET_FRIENDS, requestParameters).getJSONArray("response");
-        } catch (JSONException e) {
-            LOGGER.info(callAPIMethod(METHOD_GET_FRIENDS, requestParameters));
-            e.printStackTrace();
-        }
-        return friendIdList;
+        requestParameters.put(VKDataTags.UIDS, usersId);
+        requestParameters.put(VKDataTags.FIELDS, infoFields);
+        return (JSONArray) apiMethodExecutor.execute(VKAPIMethod.USERS_GET, requestParameters);
     }
 
-    public JSONArray getUsersDetailInfo(String usersIdList, String infoFields) throws JSONException {
+    public JSONObject getSubscribePages(String userId) throws JSONException, InterruptedException {
         Map<String, String> requestParameters = new HashMap<String, String>();
-        requestParameters.put(LIST_UID_REQUEST_PARAMETER, usersIdList);
-        requestParameters.put(FIELDS_REQUEST_PARAMETER, infoFields);
-        JSONArray usersDetailInfo = callAPIMethod(METHOD_GET_USER_INFO, requestParameters).getJSONArray("response");
-        return usersDetailInfo;
+        requestParameters.put(VKDataTags.UID, userId);
+        requestParameters.put(VKDataTags.EXTENDED, "0");
+        requestParameters.put(VKDataTags.COUNT, "200");
+        return (JSONObject) apiMethodExecutor.execute(VKAPIMethod.USERS_GEt_SUBSCRIPTIONS, requestParameters);
+    }
+
+    public JSONArray getSubscribePagesDetailedInfo(String pagesIdList) throws JSONException, InterruptedException {
+        Map<String, String> requestParameters = new HashMap<String, String>();
+        requestParameters.put(VKDataTags.GIDS, pagesIdList);
+        requestParameters.put(VKDataTags.FIELDS, VKDataTags.DESCRIPTION);
+        return (JSONArray) apiMethodExecutor.execute(VKAPIMethod.GROUPS_GET_BY_ID, requestParameters);
     }
 }

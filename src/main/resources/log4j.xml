@@ -9,10 +9,20 @@
             <param name="ConversionPattern" value="%-5p %c{1} - %m%n"/>
         </layout>
     </appender>
+    <appender name="fileAppender" class="org.apache.log4j.RollingFileAppender">
+        <param name="append" value="false"/>
+        <param name="file" value="/home/ragvena/LOG/vk"/>
+        <param name="maxFileSize" value="20MB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d{dd MMM yyyy HH:mm:ss} %-5p %c{1} - %m%n"/>
+        </layout>
+    </appender>
+
 
     <root>
-        <priority value="debug"/>
+        <priority value="info"/>
         <appender-ref ref="console"/>
+        <appender-ref ref="fileAppender"/>
     </root>
 
 </log4j:configuration>

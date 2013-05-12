@@ -14,11 +14,11 @@ import java.util.Scanner;
 /**
  * nazarovtr
  */
-public class VKNetworkManager{
+public class VKNetworkManager {
 
     private static final String VK_NAME = "vk_api";
     private static final String APP_ID = "3449144";
-    private static final String APP_SECRET = "SOcNQPSGc8ghSniIVngJ";
+    private static final String APP_SECRET = "hjhHIUhsdfhiuGIrefoppqi";
     private static final String SCOPE = "friends,wall";
     private static final String REDIRECT_URI = "http://test.com:8080/oauth.vk";
     private static final String OAUTH_VK = "oauth.vk.com/";

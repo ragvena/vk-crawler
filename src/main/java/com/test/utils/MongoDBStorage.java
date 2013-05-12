@@ -2,7 +2,7 @@ package com.test.utils;
 
 
 import com.mongodb.*;
-import com.test.user.MongoDbUserInterface;
+import com.test.data.MongoDBDataTags;
 import org.apache.log4j.Logger;
 
 import java.net.UnknownHostException;
@@ -15,11 +15,15 @@ import java.net.UnknownHostException;
 
 public class MongoDBStorage {
     private static final String MONGO_STORAGE = "crawler";
-    private static final String USER_COLLECTION = "users";
+    private static final String RAW_USER_COLLECTION = "usersTest";
+    private static final String VALIDATE_USER_COLLECTION = "users";
+    private static final String PAGES_COLLECTION = "page";
     private static final Logger LOGGER = Logger.getLogger(MongoDBStorage.class);
     private static MongoDBStorage instance;
     public DB database;
-    public DBCollection userCollection;
+    public DBCollection rawUserCollection;
+    public DBCollection validateUserCollection;
+    public DBCollection pagesCollection;
 
 
     private MongoDBStorage() {
@@ -31,7 +35,9 @@ public class MongoDBStorage {
         }
         database = mongo.getDB(MONGO_STORAGE);
         database.setWriteConcern(WriteConcern.NORMAL.continueOnErrorForInsert(true));
-        userCollection = database.getCollection(USER_COLLECTION);
+        rawUserCollection = database.getCollection(RAW_USER_COLLECTION);
+        validateUserCollection = database.getCollection(VALIDATE_USER_COLLECTION);
+        pagesCollection = database.getCollection(PAGES_COLLECTION);
     }
 
     public static MongoDBStorage getInstance() {
@@ -43,25 +49,25 @@ public class MongoDBStorage {
 
     public void insertRecord(BasicDBObject record) {
         database.requestStart();
-        userCollection.insert(record, WriteConcern.NORMAL.continueOnErrorForInsert(true));
+        rawUserCollection.insert(record, WriteConcern.NORMAL.continueOnErrorForInsert(true));
         database.requestDone();
     }
 
     public void insertRecordList(BasicDBList list) {
         database.requestStart();
-        userCollection.insert(list, WriteConcern.NORMAL.continueOnErrorForInsert(true));
+        rawUserCollection.insert(list, WriteConcern.NORMAL.continueOnErrorForInsert(true));
         database.requestDone();
     }
 
     public DBCursor getFriendCircle(String rootUser, Integer circle) {
         database.requestStart();
         DBObject query = BasicDBObjectBuilder.start()
-                .add(MongoDbUserInterface.ROOT_USER, rootUser)
-                .add(MongoDbUserInterface.FRIEND_CIRCLE, circle)
+                .add(MongoDBDataTags.ROOT_USER, rootUser)
+                .add(MongoDBDataTags.FRIEND_CIRCLE, circle)
                 .get();
-        DBCursor friends = userCollection.find(query);
+        DBCursor friends = rawUserCollection.find(query);
         database.requestDone();
-        return  friends;
+        return friends;
     }
 
     public void disconnect() {
