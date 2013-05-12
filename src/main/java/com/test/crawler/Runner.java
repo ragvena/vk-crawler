@@ -155,7 +155,7 @@ public class Runner {
             final AtomicLong totalAddedUserCounter = new AtomicLong(0);
             final AtomicLong totalProcessedUserCounter = new AtomicLong(0);
             final Integer maxCounter = 100;
-            ExecutorService executorService = new BlockingThreadPoolExecutor(3,
+            ExecutorService executorService = new BlockingThreadPoolExecutor(2,
                     1, 1000L, TimeUnit.MILLISECONDS, 1000L, TimeUnit.MILLISECONDS, new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
@@ -164,59 +164,64 @@ public class Runner {
             });
             while (cursor.hasNext()) {
                 DBObject currentUserInfo = cursor.next();
-                if (userList.length() > 0) {
-                    userList.append(",");
-                }
-                userList.append((String) currentUserInfo.get(MongoDBDataTags.UID));
-                currentUserCounter++;
-                if (currentUserCounter == maxCounter) {
-                    final String usersListString = userList.toString();
-                    userList.setLength(0);
-                    currentUserCounter = 0;
-                    executorService.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            JSONArray response = null;
-                            try {
-                                response = vkapiProvider.getUsersDetailInfo(usersListString, "");
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                            }
-                            for (int i = 0; i < response.length(); i++) {
-                                JSONObject user = null;
+                DBObject existing = storage.validateUserCollection.findOne(new BasicDBObject(MongoDBDataTags.UID, (String) currentUserInfo.get(MongoDBDataTags.UID)));
+                if (existing == null) {
+                    if (userList.length() > 0) {
+                        userList.append(",");
+                    }
+                    userList.append((String) currentUserInfo.get(MongoDBDataTags.UID));
+                    currentUserCounter++;
+                    if (currentUserCounter == maxCounter) {
+                        final String usersListString = userList.toString();
+                        userList.setLength(0);
+                        currentUserCounter = 0;
+                        executorService.submit(new Runnable() {
+                            @Override
+                            public void run() {
+                                JSONArray response = null;
                                 try {
-                                    user = response.getJSONObject(i);
-
-                                    if (isEmpty(user, VKDataTags.DEACTIVATED)) {
-                                        if (!isEmpty(user, VKDataTags.B_DATE) &&
-                                                !isEmpty(user, VKDataTags.SEX) && user.getInt(VKDataTags.SEX) != 0 &&
-                                                !isEmpty(user, VKDataTags.CITY) && user.getInt(VKDataTags.CITY) == 106) {
-                                            storage.validateUserCollection.insert(BasicDBObjectBuilder.start()
-                                                    .add(MongoDBDataTags.UID, user.optString(VKDataTags.UID))
-                                                    .add(VKDataTags.FIRST_NAME, user.optString(VKDataTags.FIRST_NAME))
-                                                    .add(VKDataTags.SURNAME, user.optString(VKDataTags.SURNAME))
-                                                    .add(VKDataTags.B_DATE, user.optString(VKDataTags.B_DATE))
-                                                    .add(VKDataTags.SEX, user.optString(VKDataTags.SEX))
-                                                    .get());
-                                            totalAddedUserCounter.incrementAndGet();
-                                            if (totalAddedUserCounter.get() % 1000 == 0) {
-                                                LOGGER.info("TotalAdded:\t" + totalAddedUserCounter.get());
-                                                LOGGER.info("TotalProcessed:\t" + totalProcessedUserCounter.get());
-                                            }
-                                        }
-                                    }
+                                    response = vkapiProvider.getUsersDetailInfo(usersListString, "");
                                 } catch (JSONException e) {
+                                    e.printStackTrace();
+                                } catch (InterruptedException e) {
                                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                                 }
+                                for (int i = 0; i < response.length(); i++) {
+                                    JSONObject user = null;
+                                    try {
+                                        user = response.getJSONObject(i);
 
+                                        if (isEmpty(user, VKDataTags.DEACTIVATED)) {
+                                            if (!isEmpty(user, VKDataTags.B_DATE) &&
+                                                    !isEmpty(user, VKDataTags.SEX) && user.getInt(VKDataTags.SEX) != 0 &&
+                                                    !isEmpty(user, VKDataTags.CITY) && user.getInt(VKDataTags.CITY) == 106) {
+                                                storage.validateUserCollection.insert(BasicDBObjectBuilder.start()
+                                                        .add(MongoDBDataTags.UID, user.optString(VKDataTags.UID))
+                                                        .add(VKDataTags.FIRST_NAME, user.optString(VKDataTags.FIRST_NAME))
+                                                        .add(VKDataTags.SURNAME, user.optString(VKDataTags.SURNAME))
+                                                        .add(VKDataTags.B_DATE, user.optString(VKDataTags.B_DATE))
+                                                        .add(VKDataTags.SEX, user.optString(VKDataTags.SEX))
+                                                        .get());
+                                                totalAddedUserCounter.incrementAndGet();
+                                                if (totalAddedUserCounter.get() % 1000 == 0) {
+                                                    LOGGER.info("UserDetailedInfo:TotalAdded:\t" + totalAddedUserCounter.get());
+                                                    LOGGER.info("UserDetailedInfo:TotalProcessed:\t" + totalProcessedUserCounter.get());
+                                                }
+                                            }
+                                        }
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                    }
+
+                                }
                             }
-                        }
-                    });
+                        });
 
+                    }
                 }
-                totalProcessedUserCounter.incrementAndGet();
+                if (totalProcessedUserCounter.incrementAndGet() % 1000 == 0) {
+                    LOGGER.info(totalProcessedUserCounter.get());
+                }
             }
         }
     }
@@ -231,7 +236,6 @@ public class Runner {
                     return true;
                 }
             });
-            final Random sleepTime = new Random();
             final MongoDBStorage storage = MongoDBStorage.getInstance();
             DBCursor cursor = storage.validateUserCollection.find();
             DBCursor data = storage.pagesCollection.find();
@@ -275,7 +279,7 @@ public class Runner {
                                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                             }
                             if (tCounter.incrementAndGet() % 100 == 0) {
-                                LOGGER.info(tCounter.get());
+                                LOGGER.info("findPopularGroups\t" + tCounter.get());
                                 List<Map.Entry<String, Long>> ordered = new ArrayList<Map.Entry<String, Long>>(counter.entrySet());
                                 Collections.sort(ordered, COMPARATOR);
                                 for (int i = 0; i < 10; i++) {
@@ -295,7 +299,22 @@ public class Runner {
                     });
                 }
             }
+            LOGGER.info(tCounter.get());
+            List<Map.Entry<String, Long>> ordered = new ArrayList<Map.Entry<String, Long>>(counter.entrySet());
+            Collections.sort(ordered, COMPARATOR);
+            for (int i = 0; i < 10; i++) {
+                LOGGER.info(ordered.get(i));
+            }
+            for (Map.Entry<String, Long> page : ordered) {
+                storage.pagesCollection.update(new BasicDBObject(VKDataTags.GID, page.getKey()),
+                        BasicDBObjectBuilder.start()
+                                .add(VKDataTags.GID, page.getKey())
+                                .add(VKDataTags.CNT, page.getValue())
+                                .get(),
+                        true, false);
+            }
         }
+
     }
 
     public static void getPagesDetailedInfo() throws JSONException {
@@ -315,42 +334,47 @@ public class Runner {
             });
             while (cursor.hasNext()) {
                 DBObject currentPage = cursor.next();
-                if (pagesList.length() > 0) {
-                    pagesList.append(",");
-                }
-                pagesList.append((String) currentPage.get(VKDataTags.GID));
-                currentPageCounter++;
-                if (currentPageCounter == maxCounter) {
-                    final String pagesListString = pagesList.toString();
-                    pagesList.setLength(0);
-                    currentPageCounter = 0;
-                    executorService.submit(new Runnable() {
-                        @Override
-                        public void run() {
+                if (!currentPage.containsField(VKDataTags.NAME)) {
+                    if (pagesList.length() > 0) {
+                        pagesList.append(",");
+                    }
+                    pagesList.append((String) currentPage.get(VKDataTags.GID));
+                    currentPageCounter++;
+                    if (currentPageCounter.equals(maxCounter)) {
+                        final String pagesListString = pagesList.toString();
+                        pagesList.setLength(0);
+                        currentPageCounter = 0;
+                        executorService.submit(new Runnable() {
+                            @Override
+                            public void run() {
 
-                            try {
-                                JSONArray response = null;
-                                response = vkapiProvider.getSubscribePagesDetailedInfo(pagesListString);
-                                for (int i = 0; i < response.length(); i++) {
-                                    JSONObject page = response.getJSONObject(i);
-                                    DBObject key = new BasicDBObject(VKDataTags.GID, page.getString(VKDataTags.GID));
-                                    DBObject pageData = storage.pagesCollection.findOne(key);
-                                    pageData.put(VKDataTags.DESCRIPTION, page.getString(VKDataTags.DESCRIPTION));
-                                    pageData.put(VKDataTags.NAME, page.getString(VKDataTags.NAME));
-                                    pageData.put(VKDataTags.SCREEN_NAME, page.getString(VKDataTags.SCREEN_NAME));
-                                    storage.pagesCollection.update(key, pageData);
+                                try {
+                                    JSONArray response = null;
+                                    response = vkapiProvider.getSubscribePagesDetailedInfo(pagesListString);
+                                    for (int i = 0; i < response.length(); i++) {
+                                        JSONObject page = response.getJSONObject(i);
+                                        DBObject key = new BasicDBObject(VKDataTags.GID, page.getString(VKDataTags.GID));
+                                        DBObject pageData = storage.pagesCollection.findOne(key);
+                                        pageData.put(VKDataTags.DESCRIPTION, page.getString(VKDataTags.DESCRIPTION));
+                                        pageData.put(VKDataTags.NAME, page.getString(VKDataTags.NAME));
+                                        pageData.put(VKDataTags.SCREEN_NAME, page.getString(VKDataTags.SCREEN_NAME));
+                                        storage.pagesCollection.update(key, pageData);
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                                 }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+
                             }
+                        });
 
-                        }
-                    });
-
+                    }
                 }
-                totalProcessedPageCounter.incrementAndGet();
+                if (totalProcessedPageCounter.incrementAndGet() % 1000 == 0) {
+                    LOGGER.info("getPagesDetailedInfo\t" + totalProcessedPageCounter.get());
+                }
+
             }
         }
     }
