@@ -16,14 +16,16 @@ import java.net.UnknownHostException;
 public class MongoDBStorage {
     private static final String MONGO_STORAGE = "crawler";
     private static final String RAW_USER_COLLECTION = "usersTest";
-    private static final String VALIDATE_USER_COLLECTION = "users";
+    private static final String VALIDATE_USER_COLLECTION = "users2";
     private static final String PAGES_COLLECTION = "page";
+    private static final String RUBRIC_COLLECTION = "rubric";
     private static final Logger LOGGER = Logger.getLogger(MongoDBStorage.class);
     private static MongoDBStorage instance;
     public DB database;
     public DBCollection rawUserCollection;
     public DBCollection validateUserCollection;
     public DBCollection pagesCollection;
+    public DBCollection rubricCollection;
 
 
     private MongoDBStorage() {
@@ -38,6 +40,7 @@ public class MongoDBStorage {
         rawUserCollection = database.getCollection(RAW_USER_COLLECTION);
         validateUserCollection = database.getCollection(VALIDATE_USER_COLLECTION);
         pagesCollection = database.getCollection(PAGES_COLLECTION);
+        rubricCollection = database.getCollection(RUBRIC_COLLECTION);
     }
 
     public static MongoDBStorage getInstance() {

@@ -22,7 +22,7 @@ public class SimpleCallAPIMethodExecutor {
     public static final String API_URL = "https://api.vk.com/method/";
     private String accessToken;
     private Random sleepTime;
-    private static final Integer RETRY_COUNTER = 5;
+    private static final Integer RETRY_COUNTER = 0;
     private static final Integer MAX_SLEEP_DURATION = 25;
     private static final Object EMPTY_OBJECT = new Object();
 

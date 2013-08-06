@@ -1,5 +1,5 @@
-<%@ page import="com.test.crawler.Runner" %>
 <%@ page import="com.test.network.VKNetworkManager" %>
+<%@ page import="com.test.vk.api.provider.Runner" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <%
@@ -8,11 +8,12 @@
 
     VKNetworkManager manager = VKNetworkManager.getInstance();
     Runner crawler = Runner.getInstance(manager.getNetwork(request, response));
-//    crawler.saveFriends("11364269",3);
-    crawler.getUsersDetailedInfo();
+//    vk.saveFriends("11364269",3);
+//    vk.getUsersDetailedInfo();
 //    SocialRate rate = manager.getSocialRate(request, response);
-    crawler.findPopularGroups();
-    crawler.getPagesDetailedInfo();
+//    vk.findPopularGroups();
+    crawler.speedTest();
+//    vk.getPagesDetailedInfo();
 %>
 <html>
 <body>
